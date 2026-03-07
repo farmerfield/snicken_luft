@@ -33,6 +33,9 @@ jobs:
       - name: Render
         run: quarto render
 
+      - name: List rendered files
+        run: ls -R _site
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
