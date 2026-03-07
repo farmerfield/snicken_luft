@@ -1,6 +1,6 @@
 ---
 title: "Luftkvalitet i snickeriet"
-  subtitle: "Mätning vid justersågen"
+ subtitle: "Mätning vid justersågen"
 format: html
 ---
 
