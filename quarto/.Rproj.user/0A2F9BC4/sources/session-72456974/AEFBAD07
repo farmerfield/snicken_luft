@@ -1,0 +1,27 @@
+{
+    "id": "AEFBAD07",
+    "path": "~/opencode/esp_luft/quarto/scripts/tidsplott_2_5.R",
+    "project_path": "scripts/tidsplott_2_5.R",
+    "type": "r_source",
+    "hash": "492042030",
+    "contents": "",
+    "dirty": false,
+    "created": 1772374531727.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "76,14",
+        "scrollLine": "60"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1772790701,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1772790701716,
+    "read_only": false,
+    "read_only_alternatives": []
+}

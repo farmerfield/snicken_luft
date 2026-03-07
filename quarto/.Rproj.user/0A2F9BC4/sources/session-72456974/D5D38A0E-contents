@@ -1,0 +1,17 @@
+project:
+  type: website
+  output-dir: ../docs
+
+website:
+  title: "Luften i snicken"
+  navbar:
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Daily"
+        href: analysis/daily.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true

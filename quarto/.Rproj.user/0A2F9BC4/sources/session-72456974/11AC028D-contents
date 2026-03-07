@@ -1,0 +1,141 @@
+---
+title: "Daily dashboard"
+format: html
+---
+
+```{r paket}
+#| message: false
+#| warning: false
+#| include: false
+
+source("scripts/paket.R")
+```
+
+```{r load_node_tables}
+#| message: false
+#| warning: false
+#| include: false
+
+source("scripts/load_node_tables.R")
+```
+
+```{r data_wrangling}
+#| message: false
+#| warning: false
+#| include: false
+library(plotly)
+
+tz_local <- "CET"
+epoch_col <- "epoch"
+summary_date <- NULL
+node_pick <- "node-2"
+topic_pick <- "sensors_pms5003_node-2_sensor_pms_pm2_5_state"
+
+node_tables <- load_node_tables(target_date = summary_date)
+
+if (length(node_tables) == 0) {
+  stop("No log files found. Set PMS_LOG_DIR or add log files.")
+}
+
+time_conversion <- function(.data) {
+  .data %>%
+    mutate(
+      date_time = as_datetime(.data[[epoch_col]], tz = tz_local),
+      time = hms::as_hms(date_time)
+    )
+}
+
+node_data <- node_tables %>%
+  map(time_conversion) %>%
+  bind_rows(.id = "node")
+
+plot_data <- node_data %>%
+  filter(node == node_pick, topic == topic_pick) %>%
+  mutate(date = as.Date(date_time, tz = tz_local)) %>%
+  arrange(date, date_time) %>%
+  group_by(date) %>%
+  mutate(
+    ma_workday = slide_dbl(
+      value,
+      .f = ~ mean(.x, na.rm = TRUE),
+      .before = 480,
+      .complete = FALSE
+    )
+  ) %>%
+  ungroup()
+
+if (nrow(plot_data) == 0) {
+  stop("No rows after filtering. Check node_pick/topic_pick.")
+}
+
+dates <- sort(unique(plot_data$date))
+latest_date <- max(dates)
+latest_index <- which(dates == latest_date)
+```
+
+```{r ma_workday_plot}
+#| echo: false
+#| message: false
+#| warning: false
+
+p <- plot_ly()
+
+for (i in seq_along(dates)) {
+  d <- dates[i]
+  df_day <- plot_data %>% filter(date == d)
+
+  p <- add_lines(
+    p,
+    data = df_day,
+    x = ~date_time,
+    y = ~ma_workday,
+    name = as.character(d),
+    visible = identical(d, latest_date)
+  )
+}
+
+buttons <- lapply(seq_along(dates), function(i) {
+  d <- dates[i]
+  df_day <- plot_data %>% filter(date == d)
+  x_range <- c(min(df_day$date_time), max(df_day$date_time))
+  vis <- rep(FALSE, length(dates))
+  vis[i] <- TRUE
+
+  list(
+    method = "update",
+    args = list(
+      list(visible = vis),
+      list(
+        title = paste("Day:", d),
+        xaxis = list(range = x_range)
+      )
+    ),
+    label = as.character(d)
+  )
+})
+
+p %>%
+  layout(
+    title = paste("Day:", latest_date),
+    xaxis = list(title = "Time", tickformat = "%H:%M"),
+    yaxis = list(title = "8-hour moving average", range = c(0, 20)),
+    shapes = list(
+      list(
+        type = "line",
+        xref = "paper",
+        x0 = 0,
+        x1 = 1,
+        y0 = 2,
+        y1 = 2,
+        line = list(color = "red")
+      )
+    ),
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        active = latest_index - 1,
+        buttons = buttons
+      )
+    )
+  )
+```
