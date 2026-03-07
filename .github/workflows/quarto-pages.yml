@@ -2,7 +2,7 @@ name: Publish Quarto
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -10,20 +10,32 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: quarto-dev/quarto-actions/setup@v2
+
       - uses: r-lib/actions/setup-r@v2
+
       - name: Install R packages
-        run: Rscript -e 'install.packages(c("tidyverse","hms","scales","forecast","slider","plotly","lubridate"))'
+        run: Rscript -e 'install.packages(c("tidyverse","hms","scales","forecast","slider","plotly","lubridate"), repos="https://cloud.r-project.org")'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Render
-        run: quarto render quarto
+        run: quarto render
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: _site
 
   deploy:
     needs: build
