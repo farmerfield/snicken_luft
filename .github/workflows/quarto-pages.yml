@@ -30,17 +30,16 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Show files
+      - name: Show repo structure
         run: |
           pwd
           ls -la
-          find . -maxdepth 3 -name "_quarto.yml" -o -name "*.qmd"
+          find . -maxdepth 4 \( -name "_quarto.yml" -o -name "*.qmd" \)
 
-      - name: Render
-        working-directory: quarto
-        run: quarto render
+      - name: Render Quarto project
+        run: quarto render ./quarto
 
-      - name: List rendered files
+      - name: Show rendered files
         run: ls -R _site
 
       - uses: actions/upload-pages-artifact@v3
