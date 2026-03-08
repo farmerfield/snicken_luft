@@ -1,9 +1,0 @@
----
-title: "esp_luft PoC"
----
-
-This is a local proof-of-concept for daily plots.
-
-- Data: CSV files in `data/`
-- Time column: `time` (epoch seconds)
-- Time zone: CET
