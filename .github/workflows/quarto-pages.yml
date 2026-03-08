@@ -27,7 +27,14 @@ jobs:
       - name: Install R packages
         run: 
           Rscript -e 'install.packages(c("dplyr","ggplot2","readr","tibble","tidyr","purrr"), repos="https://cloud.r-project.org")'
-          Rscript -e 'install.packages(c("hms","scales","forecast","slider","plotly","lubridate","rmarkdown"), repos="https://cloud.r-project.org")'
+          Rscript -e 'install.packages(c("hms",
+          "scales",
+          "forecast",
+          "slider",
+          "plotly",
+          "lubridate",
+          "rmarkdown",
+          "knitr"), repos="https://cloud.r-project.org")'
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
