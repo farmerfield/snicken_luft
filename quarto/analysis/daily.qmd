@@ -47,8 +47,8 @@ if (!nzchar(log_dir)) {
 #| warning: false
 #| include: false
 
-source("../scripts/load_node_tables.R")
-source("../scripts/time_conversion.R")
+source("scripts/load_node_tables.R")
+source("scripts/functions.R")
 ```
 ```{r node_data}
 #| message: false
