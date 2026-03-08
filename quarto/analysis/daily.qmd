@@ -21,7 +21,6 @@ library(stringr)
 library(purrr)
 library(readr)
 library(tibble)
-library(rmarkdown)
 library(knitr)
 
 
