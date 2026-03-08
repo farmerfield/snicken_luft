@@ -188,16 +188,7 @@ Grafen visar ett glidande medelvärde över 8 timmar för partiklar i som har 2.
 
 Ett glidande medelvärde beräknas på all data som ligger 8 timmar bakåt i tiden. Det vill säga medelvärdet kl. 16:00 beräknas för värden mellan 08:00-16:00 samma dag.
 
-## Bedöm om du behöver använda skyddsutrustning
+## Vad innebär ett värde x på y-axeln
 
-Den röda horisontella linjen i diagrammet visar det hygieniska gränsvärdet av trädamm från hårda eller mjuka träslag. Det hygieniska gränsvärdet är den tillåtna exponeringen av trädamm under en 8 timmars arbetsdag. Du har ansvar för att använda skyddsutrustning när du bedömer att det är tillämpbart.
+Den röda horisontella linjen i diagrammet visar det hygieniska gränsvärdet av trädamm från hårda eller mjuka träslag. Det hygieniska gränsvärdet är den tillåtna exponeringen av trädamm under en 8 timmars arbetsdag.
 
-## Påverka luftkvaliteten i snickeriet
-
-Du som bestämmer hur du vill påverka luftkvaliteten i snickeriet. Det kan göras t.ex. genom att dammsuga golven innan du lämnar för dagen. Du kan välja att engagera dig i de strukturella åtgärder som gemensamma krafter planerar att genomföra i snickeriet för att förbättra luftkvaliteten.
-
-## Syftet med mätningen är lärande
-
-Det är också viktigt att poängtera att mätningarna genomförs i syfte att lära sig att använda mikrokontroller och att automatisera samt fjärrstyra processer som hanterar data. Vidare är det viktigt att understryka att sensorerna har en begränsad känslighet och är inte att betrakta som en "sanning". Resultaten från mätningarna ger en indikation på luftkvaliteten i snickeriet när olika typer av maskiner används.
-
-[Faktablad till sensorn som används i snickeriet](https://www.plantower.com/en/products_33/74.html)
