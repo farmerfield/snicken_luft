@@ -33,7 +33,6 @@ jobs:
           "slider",
           "plotly",
           "lubridate",
-          "rmarkdown",
           "knitr"), repos="https://cloud.r-project.org")'
 
       - name: Setup Pages
