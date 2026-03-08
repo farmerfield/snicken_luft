@@ -29,7 +29,7 @@ library(knitr)
 #| message: false
 #| warning: false
 #| include: false
-#| cache: false
+#| cache: true
 
 tz_local <- "Europe/Stockholm"
 epoch_col <- "epoch"
