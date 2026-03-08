@@ -49,7 +49,8 @@ if (!nzchar(log_dir)) {
 #| include: false
 #| dependson: vector_definition
 
-source(file.path("..", "scripts", "load_node_tables.R"))
+source("../scripts/load_node_tables.R")
+
 ```
 
 ```{r load_functions}
@@ -57,7 +58,7 @@ source(file.path("..", "scripts", "load_node_tables.R"))
 #| warning: false
 #| include: false
 
-source(file.path("..", "scripts", "functions.R"))
+source("../scripts/functions.R")
 ```
 
 ```{r load_nodes}
