@@ -23,20 +23,13 @@ library(readr)
 library(tibble)
 library(knitr)
 
-
-
-
-
-
-
-
 ```
 
 ```{r vector_definition}
 #| message: false
 #| warning: false
 #| include: false
-#| cache: true
+#| cache: false
 
 tz_local <- "Europe/Stockholm"
 epoch_col <- "epoch"
