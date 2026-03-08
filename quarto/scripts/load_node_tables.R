@@ -10,7 +10,8 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
   log_dir <- path.expand(log_dir)
 
   if (!dir.exists(log_dir)) {
-    stop(paste("Log directory not found:", shQuote(log_dir)))
+    message("Log directory not found: ", shQuote(log_dir))
+    return(list())
   }
 
   pattern <- if (!is.null(target_date)) {
@@ -22,32 +23,49 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
   files <- list.files(log_dir, pattern = pattern, full.names = TRUE)
 
   if (length(files) == 0) {
+    message("No log files found in: ", shQuote(log_dir))
     return(list())
   }
 
   parse_topic <- function(safe_topic) {
     m <- regexec("^sensors_pms5003_(node-[^_]+)_sensor_(.*)_state$", safe_topic)
     parts <- regmatches(safe_topic, m)[[1]]
+
     if (length(parts) >= 3) {
       return(list(node = parts[2], metric = parts[3]))
     }
-    return(list(node = NA, metric = NA))
+
+    list(node = NA_character_, metric = NA_character_)
   }
 
   node_tables <- list()
 
   for (f in files) {
-    df <- read.csv(f, stringsAsFactors = FALSE)
+    df <- tryCatch(
+      read.csv(f, stringsAsFactors = FALSE),
+      error = function(e) {
+        message("Could not read file: ", shQuote(f))
+        message("Reason: ", conditionMessage(e))
+        return(NULL)
+      }
+    )
+
+    if (is.null(df)) {
+      next
+    }
 
     if (!all(c("epoch", "value") %in% names(df))) {
       if (ncol(df) >= 2) {
         names(df)[1:2] <- c("epoch", "value")
+      } else {
+        message("Skipping file with too few columns: ", shQuote(f))
+        next
       }
     }
 
     df$epoch <- suppressWarnings(as.numeric(df$epoch))
     df$value <- suppressWarnings(as.numeric(df$value))
-    df <- df[is.finite(df$epoch) & is.finite(df$value), ]
+    df <- df[is.finite(df$epoch) & is.finite(df$value), , drop = FALSE]
 
     if (nrow(df) == 0) {
       next
@@ -59,6 +77,7 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
     meta <- parse_topic(safe_topic)
 
     if (is.na(meta$node) || is.na(meta$metric)) {
+      message("Skipping file with unrecognized topic pattern: ", shQuote(base))
       next
     }
 
