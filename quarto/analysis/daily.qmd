@@ -37,6 +37,7 @@ summary_date <- NULL
 node_pick <- "node-2"
 topic_pick <- "sensors_pms5003_node-2_sensor_pms_pm2_5_state"
 log_dir <- Sys.getenv("PMS_LOG_DIR", unset = "../pms_logs")
+
 if (!nzchar(log_dir)) {
   log_dir <- "../pms_logs"
 }
@@ -58,7 +59,22 @@ source("../scripts/load_node_tables.R")
 #| warning: false
 #| include: false
 
-source("../scripts/functions.R")
+node_tables <- load_node_tables(log_dir = log_dir, target_date = summary_date)
+
+has_data <- length(node_tables) > 0
+```
+
+```{r no_data}
+#| message: false
+#| warning: false
+#| include: false
+if (!has_data) {
+  cat("## Ingen loggdata tillgänglig\n\n")
+  cat("Renderingen kördes utan åtkomst till loggfiler.\n\n")
+  cat("Kontrollera miljövariabeln `PMS_LOG_DIR` eller lägg loggar i rätt katalog.")
+  knitr::knit_exit()
+}
+
 ```
 
 ```{r load_nodes}
@@ -67,10 +83,48 @@ source("../scripts/functions.R")
 #| include: false
 #| dependson: functions
 
-node_tables <- load_node_tables(log_dir = log_dir, target_date = summary_date)
+load_node_tables <- function(log_dir, target_date = NULL) {
+  if (is.null(log_dir) || !nzchar(log_dir) || !dir.exists(log_dir)) {
+    message("Log directory not found: ", log_dir)
+    return(list())
+  }
 
-if (length(node_tables) == 0) {
-  stop("No log files found. Set PMS_LOG_DIR or add log files.")
+  files <- list.files(
+    path = log_dir,
+    pattern = "\\.(csv|txt)$",
+    full.names = TRUE
+  )
+
+  if (!is.null(target_date)) {
+    target_date <- as.Date(target_date)
+    files <- files[grepl(format(target_date, "%Y-%m-%d"), basename(files))]
+  }
+
+  if (length(files) == 0) {
+    message("No log files found in: ", log_dir)
+    return(list())
+  }
+
+  tables <- lapply(files, function(f) {
+    tryCatch(
+      readr::read_csv(f, show_col_types = FALSE),
+      error = function(e) {
+        message("Could not read file: ", f)
+        message("Reason: ", conditionMessage(e))
+        NULL
+      }
+    )
+  })
+
+  tables <- Filter(Negate(is.null), tables)
+
+  if (length(tables) == 0) {
+    message("No readable log files found in: ", log_dir)
+    return(list())
+  }
+
+  names(tables) <- basename(files)[seq_along(tables)]
+  tables
 }
 
 
@@ -101,8 +155,10 @@ plot_data <- node_data %>%
   ) %>%
   ungroup()
 
-if (nrow(plot_data) == 0) {
-  stop("No rows after filtering. Check node_pick/topic_pick.")
+if (nrow(node_data) == 0) {
+  cat("Ingen data tillgänglig för vald dag.")
+} else {
+  # vanliga analyser och figurer
 }
 
 dates <- sort(unique(plot_data$date))
