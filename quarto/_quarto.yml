@@ -1,6 +1,9 @@
 project:
   type: website
   output-dir: ../_site
+  
+execute: 
+  dir: quarto
 
 website:
   title: "Luften i snicken"
