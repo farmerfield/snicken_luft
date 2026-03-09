@@ -1,10 +1,10 @@
 project:
   type: website
   output-dir: ../_site
-  
-execute: 
-  dir: quarto
 
+execute:
+  dir: project
+  
 website:
   title: "Luften i snicken"
   navbar:

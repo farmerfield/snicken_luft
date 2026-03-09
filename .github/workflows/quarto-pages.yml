@@ -74,6 +74,8 @@ jobs:
 
       - name: Render Quarto project
         run: quarto render ./quarto
+        env:
+          PMS_LOG_DIR: ${{ github.workspace }}/pms_logs
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
