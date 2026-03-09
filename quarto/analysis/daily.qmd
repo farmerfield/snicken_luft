@@ -2,6 +2,10 @@
 title: "Luftkvalitet i snickeriet"
 subtitle: "Mätning vid justersågen"
 format: html
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
 ```{r paket}

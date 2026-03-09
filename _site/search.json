@@ -1,0 +1,9 @@
+[
+  {
+    "objectID": "analysis/daily.html",
+    "href": "analysis/daily.html",
+    "title": "Luftkvalitet i snickeriet",
+    "section": "",
+    "text": "#| message: false\n#| warning: false\n#| include: false\n#| dependson: [load_tables, load_time_conversion]\n\nif (!has_tables) {\n  cat(\"## Ingen loggdata tillgänglig\\n\\n\")\n  cat(\"Renderingen kördes utan åtkomst till loggfiler.\\n\\n\")\n  cat(\"Kontrollera miljövariabeln `PMS_LOG_DIR` eller lägg loggar i rätt katalog.\\n\")\n  knitr::knit_exit()\n}\n\n## Ingen loggdata tillgänglig\n\nRenderingen kördes utan åtkomst till loggfiler.\n\nKontrollera miljövariabeln `PMS_LOG_DIR` eller lägg loggar i rätt katalog."
+  }
+]
