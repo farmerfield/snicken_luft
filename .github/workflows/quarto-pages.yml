@@ -2,7 +2,11 @@ name: Publish Quarto site
 
 on:
   push:
-    branches: [master, main]
+    branches: [master]
+    paths:
+      - "pms_logs/**"
+      - "quarto/**"
+      - ".github/workflows/quarto-pages.yml"
   workflow_dispatch:
 
 permissions:
