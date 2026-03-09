@@ -1,9 +1,9 @@
 ---
-title: "esp_luft PoC"
+title: "Luftkvalitet i snicken"
 ---
 
-This is a local proof-of-concept for daily plots.
+Det här är en proof-of-concept över luftkvalitet i snickeriet. Klicka på "Daily" för att se en överblick över det senaste dygnet.
 
-- Data: CSV files in `data/`
-- Time column: `time` (epoch seconds)
-- Time zone: CET
+- Visualisering av data från sensorn ovanför justersågen.
+- Utseendet kommer att ändras över tid i och med att sidan förbättras.
+- Fler sensorer och redovisning av data kommer att läggas upp.

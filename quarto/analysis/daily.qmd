@@ -27,8 +27,8 @@ library(knitr)
 ```{r define_variables}
 #| message: false
 #| warning: false
-#| include: false
 #| cache: true
+#| include: false
 
 tz_local <- "Europe/Stockholm"
 epoch_col <- "epoch"
@@ -285,10 +285,10 @@ if (!has_plot_data) {
 ```
 
 ```{r}
-
+#| label: date_calc
+#| include: false
 #| message: false
 #| warning: false
-#| include: false
 #| dependson: prepare_plot_data
 
 dates <- sort(unique(plot_data$date))
@@ -304,7 +304,7 @@ latest_index <- which(dates == latest_date)[1]
 ```
 
 
-```{r}
+```{r data_summary}
 #| echo: false
 #| message: false
 #| warning: false
