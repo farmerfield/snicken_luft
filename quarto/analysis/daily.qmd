@@ -41,6 +41,8 @@ if (!nzchar(log_dir)) {
   log_dir <- "../pms_logs"
 }
 ```
+
+
 ```{r load_tables}
 
 #| message: false
@@ -50,6 +52,17 @@ if (!nzchar(log_dir)) {
 source("scripts/load_node_tables.R")
 source("scripts/functions.R")
 ```
+
+```{r load_time_conversion}
+
+#| message: false
+#| warning: false
+#| include: false
+
+source("scripts/functions.R")
+```
+
+
 ```{r node_data}
 #| message: false
 #| warning: false
@@ -88,7 +101,7 @@ if (!has_tables) {
 #| message: false
 #| warning: false
 #| include: false
-#| dependson: load_tables
+#| dependson: [load_tables, load_functions, load_time_conversion]
 
 node_data <- tryCatch(
   node_tables %>%
@@ -103,6 +116,8 @@ node_data <- tryCatch(
 has_node_data <- nrow(node_data) > 0
 
 ```
+
+
 ```{r if_no_data}
 
 #| message: false
@@ -141,6 +156,8 @@ plot_data <- node_data %>%
 has_plot_data <- nrow(plot_data) > 0
 
 ```
+
+
 ```{r}
 
 #| message: false
@@ -173,10 +190,12 @@ if (length(dates) == 0 || all(is.na(dates))) {
   knitr::knit_exit()
 }
 
-```{r}
-
 latest_date <- max(dates, na.rm = TRUE)
 latest_index <- which(dates == latest_date)[1]
+```
+
+
+```{r}
 #| echo: false
 #| message: false
 #| warning: false
@@ -185,6 +204,9 @@ cat("## Översikt\n\n")
 cat(paste0("Visar glidande medelvärde för PM2.5 för nod `", node_pick, "`.\n\n"))
 cat(paste0("Antal dagar i urvalet: **", length(dates), "**\n\n"))
 cat(paste0("Senaste dag i data: **", latest_date, "**\n"))
+
+```
+
 
 ```{r}
 #| echo: false
