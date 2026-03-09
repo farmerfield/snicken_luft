@@ -44,21 +44,128 @@ if (!nzchar(log_dir)) {
 
 
 ```{r load_tables}
-
 #| message: false
 #| warning: false
 #| include: false
 
-source("scripts/load_node_tables.R")
+load_node_tables <- function(log_dir = NULL, target_date = NULL) {
+  if (is.null(log_dir) || !nzchar(log_dir)) {
+    log_dir <- Sys.getenv("PMS_LOG_DIR", unset = NA)
+  }
+
+  if (is.na(log_dir) || !nzchar(log_dir)) {
+    log_dir <- "~/pms_logs"
+  }
+
+  log_dir <- path.expand(log_dir)
+
+  if (!dir.exists(log_dir)) {
+    message("Log directory not found: ", shQuote(log_dir))
+    return(list())
+  }
+
+  pattern <- if (!is.null(target_date)) {
+    paste0("__", target_date, "\\.csv$")
+  } else {
+    "__\\d{4}-\\d{2}-\\d{2}\\.csv$"
+  }
+
+  files <- list.files(log_dir, pattern = pattern, full.names = TRUE)
+
+  if (length(files) == 0) {
+    message("No log files found in: ", shQuote(log_dir))
+    return(list())
+  }
+
+  parse_topic <- function(safe_topic) {
+    m <- regexec("^sensors_pms5003_(node-[^_]+)_sensor_(.*)_state$", safe_topic)
+    parts <- regmatches(safe_topic, m)[[1]]
+
+    if (length(parts) >= 3) {
+      return(list(node = parts[2], metric = parts[3]))
+    }
+
+    list(node = NA_character_, metric = NA_character_)
+  }
+
+  node_tables <- list()
+
+  for (f in files) {
+    df <- tryCatch(
+      read.csv(f, stringsAsFactors = FALSE),
+      error = function(e) {
+        message("Could not read file: ", shQuote(f))
+        message("Reason: ", conditionMessage(e))
+        return(NULL)
+      }
+    )
+
+    if (is.null(df)) {
+      next
+    }
+
+    if (!all(c("epoch", "value") %in% names(df))) {
+      if (ncol(df) >= 2) {
+        names(df)[1:2] <- c("epoch", "value")
+      } else {
+        message("Skipping file with too few columns: ", shQuote(f))
+        next
+      }
+    }
+
+    df$epoch <- suppressWarnings(as.numeric(df$epoch))
+    df$value <- suppressWarnings(as.numeric(df$value))
+    df <- df[is.finite(df$epoch) & is.finite(df$value), , drop = FALSE]
+
+    if (nrow(df) == 0) {
+      next
+    }
+
+    base <- basename(f)
+    date_tag <- sub(".*__(\\d{4}-\\d{2}-\\d{2})\\.csv$", "\\1", base)
+    safe_topic <- sub("__\\d{4}-\\d{2}-\\d{2}\\.csv$", "", base)
+    meta <- parse_topic(safe_topic)
+
+    if (is.na(meta$node) || is.na(meta$metric)) {
+      message("Skipping file with unrecognized topic pattern: ", shQuote(base))
+      next
+    }
+
+    out <- data.frame(
+      date = date_tag,
+      epoch = df$epoch,
+      value = df$value,
+      metric = meta$metric,
+      topic = safe_topic,
+      stringsAsFactors = FALSE
+    )
+
+    if (is.null(node_tables[[meta$node]])) {
+      node_tables[[meta$node]] <- out
+    } else {
+      node_tables[[meta$node]] <- rbind(node_tables[[meta$node]], out)
+    }
+  }
+
+  node_tables
+}
+
+
 ```
 
 ```{r load_time_conversion}
-
 #| message: false
 #| warning: false
 #| include: false
 
-source("scripts/functions.R")
+time_conversion <- function(.data) {
+  .data %>%
+    mutate(
+      date_time = as_datetime(.data[[epoch_col]], tz = tz_local),
+      time = hms::as_hms(date_time)
+    )
+}
+
 ```
 
 
@@ -66,7 +173,7 @@ source("scripts/functions.R")
 #| message: false
 #| warning: false
 #| include: false
-#| dependson: [settings, source_scripts]
+#| dependson: [settings, load_time_conversion]
 
 node_tables <- tryCatch(
   load_node_tables(log_dir = log_dir, target_date = summary_date),
@@ -84,7 +191,7 @@ has_tables <- length(node_tables) > 0
 #| message: false
 #| warning: false
 #| include: false
-#| dependson: load_tables
+#| dependson: [load_tables, load_time_conversion]
 
 if (!has_tables) {
   cat("## Ingen loggdata tillgänglig\n\n")
