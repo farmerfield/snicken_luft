@@ -50,7 +50,6 @@ if (!nzchar(log_dir)) {
 #| include: false
 
 source("scripts/load_node_tables.R")
-source("scripts/functions.R")
 ```
 
 ```{r load_time_conversion}
@@ -131,6 +130,9 @@ if (!has_node_data) {
   knitr::knit_exit()
 }
 ```
+
+
+
 ```{r prepare_plot_data}
 
 #| message: false
