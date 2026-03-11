@@ -37,7 +37,7 @@ library(knitr)
 tz_local <- "Europe/Stockholm"
 epoch_col <- "epoch"
 summary_date <- NULL
-node_pick <- "node-2"
+node_pick <- c("node-1","node-2", "node-3")
 topic_pick <- "sensors_pms5003_node-2_sensor_pms_pm2_5_state"
 log_dir <- Sys.getenv("PMS_LOG_DIR", unset = "../pms_logs")
 
