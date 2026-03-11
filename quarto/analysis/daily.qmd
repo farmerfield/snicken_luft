@@ -1,6 +1,6 @@
 ---
 title: "Luftkvalitet i snickeriet"
-subtitle: "Mätning vid justersågen"
+subtitle: "Mätning i snickeriet"
 format: html
 execute:
   echo: false
@@ -13,59 +13,56 @@ execute:
 #| warning: false
 #| include: false
 
-library(ggplot2)
+library(tidyverse)
 library(hms)
 library(scales)
 library(forecast)
 library(slider)
 library(plotly)
 library(lubridate)
-library(dplyr)
-library(stringr)
-library(purrr)
-library(readr)
-library(tibble)
-library(knitr)
+
+
 ```
 
-```{r define_variables}
+```{r vector_definition}
 #| message: false
 #| warning: false
-#| cache: true
 #| include: false
 
 tz_local <- "Europe/Stockholm"
 epoch_col <- "epoch"
 summary_date <- NULL
-node_pick <- c("node-1","node-2", "node-3")
-topic_pick <- "sensors_pms5003_node-2_sensor_pms_pm2_5_state"
+node_pick <- "node-2"
+metric_pick <- "pms_pm2_5"
 log_dir <- Sys.getenv("PMS_LOG_DIR", unset = "../pms_logs")
-
 if (!nzchar(log_dir)) {
   log_dir <- "../pms_logs"
 }
+
 ```
 
-
-```{r load_tables}
+```{r helpers}
 #| message: false
 #| warning: false
 #| include: false
 
 load_node_tables <- function(log_dir = NULL, target_date = NULL) {
   if (is.null(log_dir) || !nzchar(log_dir)) {
-    log_dir <- Sys.getenv("PMS_LOG_DIR", unset = NA)
+    log_dir <- Sys.getenv("PMS_LOG_DIR", unset = "../pms_logs")
   }
 
-  if (is.na(log_dir) || !nzchar(log_dir)) {
-    log_dir <- "~/pms_logs"
+  if (!nzchar(log_dir)) {
+    log_dir <- "../pms_logs"
   }
 
   log_dir <- path.expand(log_dir)
 
   if (!dir.exists(log_dir)) {
-    message("Log directory not found: ", shQuote(log_dir))
-    return(list())
+    stop(paste(
+      "Log directory not found:",
+      shQuote(log_dir),
+      "(set PMS_LOG_DIR or commit pms_logs/)"
+    ))
   }
 
   pattern <- if (!is.null(target_date)) {
@@ -77,49 +74,32 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
   files <- list.files(log_dir, pattern = pattern, full.names = TRUE)
 
   if (length(files) == 0) {
-    message("No log files found in: ", shQuote(log_dir))
     return(list())
   }
 
   parse_topic <- function(safe_topic) {
     m <- regexec("^sensors_pms5003_(node-[^_]+)_sensor_(.*)_state$", safe_topic)
     parts <- regmatches(safe_topic, m)[[1]]
-
     if (length(parts) >= 3) {
       return(list(node = parts[2], metric = parts[3]))
     }
-
-    list(node = NA_character_, metric = NA_character_)
+    return(list(node = NA, metric = NA))
   }
 
   node_tables <- list()
 
   for (f in files) {
-    df <- tryCatch(
-      read.csv(f, stringsAsFactors = FALSE),
-      error = function(e) {
-        message("Could not read file: ", shQuote(f))
-        message("Reason: ", conditionMessage(e))
-        return(NULL)
-      }
-    )
-
-    if (is.null(df)) {
-      next
-    }
+    df <- read.csv(f, stringsAsFactors = FALSE)
 
     if (!all(c("epoch", "value") %in% names(df))) {
       if (ncol(df) >= 2) {
         names(df)[1:2] <- c("epoch", "value")
-      } else {
-        message("Skipping file with too few columns: ", shQuote(f))
-        next
       }
     }
 
     df$epoch <- suppressWarnings(as.numeric(df$epoch))
     df$value <- suppressWarnings(as.numeric(df$value))
-    df <- df[is.finite(df$epoch) & is.finite(df$value), , drop = FALSE]
+    df <- df[is.finite(df$epoch) & is.finite(df$value), ]
 
     if (nrow(df) == 0) {
       next
@@ -131,7 +111,6 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
     meta <- parse_topic(safe_topic)
 
     if (is.na(meta$node) || is.na(meta$metric)) {
-      message("Skipping file with unrecognized topic pattern: ", shQuote(base))
       next
     }
 
@@ -154,14 +133,6 @@ load_node_tables <- function(log_dir = NULL, target_date = NULL) {
   node_tables
 }
 
-
-```
-
-```{r load_time_conversion}
-#| message: false
-#| warning: false
-#| include: false
-
 time_conversion <- function(.data) {
   .data %>%
     mutate(
@@ -169,93 +140,37 @@ time_conversion <- function(.data) {
       time = hms::as_hms(date_time)
     )
 }
-
 ```
 
-
-```{r node_data}
+```{r load_nodes}
 #| message: false
 #| warning: false
 #| include: false
-#| dependson: [settings, load_time_conversion]
 
-node_tables <- tryCatch(
-  load_node_tables(log_dir = log_dir, target_date = summary_date),
-  error = function(e) {
-    message("Kunde inte läsa loggdata: ", conditionMessage(e))
-    list()
-  }
-)
+node_tables <- load_node_tables(log_dir = log_dir, target_date = summary_date)
 
-has_tables <- length(node_tables) > 0
-```
-
-```{r load_functions}
-
-#| message: false
-#| warning: false
-#| include: false
-#| dependson: [load_tables, load_time_conversion]
-
-if (!has_tables) {
-  cat("## Ingen loggdata tillgänglig\n\n")
-  cat("Renderingen kördes utan åtkomst till loggfiler.\n\n")
-  cat("Kontrollera miljövariabeln `PMS_LOG_DIR` eller lägg loggar i rätt katalog.\n")
-  knitr::knit_exit()
+if (length(node_tables) == 0) {
+  stop("No log files found. Set PMS_LOG_DIR or add log files.")
 }
 
-```
 
-```{r build_node_data}
+node_data <- node_tables %>%
+  map(time_conversion) %>%
+  bind_rows(.id = "node")
 
-#| message: false
-#| warning: false
-#| include: false
-#| dependson: [load_tables, load_functions, load_time_conversion]
-
-node_data <- tryCatch(
-  node_tables %>%
-    map(time_conversion) %>%
-    bind_rows(.id = "node"),
-  error = function(e) {
-    message("Kunde inte bearbeta noddata: ", conditionMessage(e))
-    tibble()
-  }
-)
-
-has_node_data <- nrow(node_data) > 0
 
 ```
 
-
-```{r if_no_data}
-
+```{r calculate_moving_average}
 #| message: false
 #| warning: false
 #| include: false
-#| dependson: build_node_data
-
-if (!has_node_data) {
-  cat("## Ingen användbar data tillgänglig\n\n")
-  cat("Loggfiler hittades, men kunde inte bearbetas till ett användbart dataformat.\n")
-  knitr::knit_exit()
-}
-```
-
-
-
-```{r prepare_plot_data}
-
-#| message: false
-#| warning: false
-#| include: false
-#| dependson: build_node_data
 
 plot_data <- node_data %>%
-  filter(node == node_pick, topic == topic_pick) %>%
+  filter(metric == metric_pick) %>%
   mutate(date = as.Date(date_time, tz = tz_local)) %>%
-  arrange(date, date_time) %>%
-  group_by(date) %>%
+  arrange(date, node, date_time) %>%
+  group_by(date, node) %>%
   mutate(
     ma_workday = slide_dbl(
       value,
@@ -266,96 +181,66 @@ plot_data <- node_data %>%
   ) %>%
   ungroup()
 
-has_plot_data <- nrow(plot_data) > 0
-
-```
-
-
-```{r}
-
-#| message: false
-#| warning: false
-#| include: false
-#| dependson: prepare_plot_data
-
-if (!has_plot_data) {
-  cat("## Ingen data för valt urval\n\n")
-  cat("Det finns loggfiler, men ingen data matchade vald nod och topic.\n\n")
-  cat(paste0("- Nod: `", node_pick, "`\n"))
-  cat(paste0("- Topic: `", topic_pick, "`\n"))
-  knitr::knit_exit()
+if (nrow(plot_data) == 0) {
+  stop("No rows after filtering. Check node_pick/topic_pick.")
 }
-
-```
-
-```{r}
-#| label: date_calc
-#| include: false
-#| message: false
-#| warning: false
-#| dependson: prepare_plot_data
 
 dates <- sort(unique(plot_data$date))
-
-if (length(dates) == 0 || all(is.na(dates))) {
-  cat("## Inga giltiga datum hittades\n\n")
-  cat("Plotdata skapades, men innehöll inga användbara datumvärden.\n")
-  knitr::knit_exit()
-}
-
-latest_date <- max(dates, na.rm = TRUE)
-latest_index <- which(dates == latest_date)[1]
-```
-
-
-```{r data_summary}
-#| echo: false
-#| message: false
-#| warning: false
-
-cat("## Översikt\n\n")
-cat(paste0("Visar glidande medelvärde för PM2.5 för nod `", node_pick, "`.\n\n"))
-cat(paste0("Antal dagar i urvalet: **", length(dates), "**\n\n"))
-cat(paste0("Senaste dag i data: **", latest_date, "**\n"))
+latest_date <- max(dates)
+latest_index <- which(dates == latest_date)
 
 ```
 
-
-```{r}
+```{r ma_workday_plot}
 #| echo: false
 #| message: false
 #| warning: false
 
 p <- plot_ly()
 
-for (i in seq_along(dates)) {
-  d <- dates[i]
-  df_day <- plot_data %>% filter(date == d)
+nodes <- sort(unique(plot_data$node))
+dates <- sort(unique(plot_data$date))
+latest_date <- max(dates)
+
+trace_map <- expand.grid(date = dates, node = nodes, stringsAsFactors = FALSE)
+
+for (i in seq_len(nrow(trace_map))) {
+  d <- trace_map$date[i]
+  n <- trace_map$node[i]
+  df_day <- plot_data %>% filter(date == d, node == n)
+  line_style <- if (n == "node-1") {
+    "dash"
+  } else if (n == "node-3") {
+    "dot"
+  } else {
+    "solid"
+  }
 
   p <- add_lines(
     p,
     data = df_day,
     x = ~date_time,
     y = ~ma_workday,
-    name = as.character(d),
-    visible = isTRUE(all.equal(d, latest_date))
+    name = n,
+    legendgroup = n,
+    line = list(dash = line_style),
+    showlegend = identical(d, latest_date),
+    visible = identical(d, latest_date)
   )
 }
 
 buttons <- lapply(seq_along(dates), function(i) {
   d <- dates[i]
   df_day <- plot_data %>% filter(date == d)
-
-  x_range <- c(min(df_day$date_time, na.rm = TRUE), max(df_day$date_time, na.rm = TRUE))
-  vis <- rep(FALSE, length(dates))
-  vis[i] <- TRUE
+  x_range <- c(min(df_day$date_time), max(df_day$date_time))
+  vis <- trace_map$date == d
 
   list(
     method = "update",
     args = list(
       list(visible = vis),
       list(
-        title = paste("Dag:", d),
+        title = paste("Day:", d),
         xaxis = list(range = x_range)
       )
     ),
@@ -365,15 +250,9 @@ buttons <- lapply(seq_along(dates), function(i) {
 
 p %>%
   layout(
-    title = paste("Dag:", latest_date),
-    xaxis = list(
-      title = "Tid",
-      tickformat = "%H:%M"
-    ),
-    yaxis = list(
-      title = "PM2.5 mg/m3 luft",
-      range = c(0, 20)
-    ),
+    title = paste("Day:", latest_date),
+    xaxis = list(title = "Time", tickformat = "%H:%M"),
+    yaxis = list(title = "PM2.5 ug/m3 luft", range = c(0, 20)),
     shapes = list(
       list(
         type = "line",
@@ -388,9 +267,22 @@ p %>%
     updatemenus = list(
       list(
         type = "dropdown",
-        active = latest_index - 1,
+        active = which(dates == latest_date) - 1,
         buttons = buttons
       )
     )
   )
 ```
+
+Grafen visar ett glidande medelvärde över 8 timmar för partiklar i som har 2.5 mikrometer i diameter med massan uttryckt som mikrogram per kubimeter luft. 
+
+Den prickade och fasta linjen visar mätningar från rummet med stora maskinerna. Den streckade linjen mäter luftkvalitet i utrymmet med fasta platser.
+
+Ett glidande medelvärde beräknas på all data som ligger 8 timmar bakåt i tiden. Det vill säga medelvärdet kl. 16:00 beräknas för värden mellan 08:00-16:00 samma dag.
+
+
+## Syftet med mätningen är lärande
+
+Mätningarna genomförs i syfte att lära sig att använda mikrokontroller och att automatisera samt fjärrstyra processer som hanterar data. Detta i ett led av nyfikenhet hur luftkvaliteten ser ut i snickeriet, men även av pragmatiska skäl, eftersom sensorerna är ett relativt enkelt sätt att samla in data i tidsserier.
+
+[Faktablad till sensorn som används i snickeriet](https://www.plantower.com/en/products_33/74.html)
