@@ -4,6 +4,12 @@ title: "Luftkvalitet i snicken"
 
 Det här är en proof-of-concept över luftkvalitet i snickeriet. Klicka på "Daily" för att se en överblick över det senaste dygnet.
 
-- Visualisering av data från sensorn ovanför justersågen.
+## Syftet med mätningen är lärande
+
+Mätningarna genomförs i syfte att lära sig att använda mikrokontroller och att automatisera samt fjärrstyra processer som hanterar data. Detta i ett led av nyfikenhet hur luftkvaliteten ser ut i snickeriet, men även av pragmatiska skäl, eftersom sensorerna är ett relativt enkelt sätt att samla in data i tidsserier.
+
+
+- Visualisering av data från sensorn ovanför justersågen, vertikalslip och från arbetsplats.
 - Utseendet kommer att ändras över tid i och med att sidan förbättras.
 - Fler sensorer och redovisning av data kommer att läggas upp.
+- För tillfället redovisas partiklar 2.5 PM per kubikmeter luft.

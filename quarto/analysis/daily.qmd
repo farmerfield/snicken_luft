@@ -282,8 +282,5 @@ Den prickade och fasta linjen visar mätningar från rummet med stora maskinerna
 Ett glidande medelvärde beräknas på all data som ligger 8 timmar bakåt i tiden. Det vill säga medelvärdet kl. 16:00 beräknas för värden mellan 08:00-16:00 samma dag.
 
 
-## Syftet med mätningen är lärande
-
-Mätningarna genomförs i syfte att lära sig att använda mikrokontroller och att automatisera samt fjärrstyra processer som hanterar data. Detta i ett led av nyfikenhet hur luftkvaliteten ser ut i snickeriet, men även av pragmatiska skäl, eftersom sensorerna är ett relativt enkelt sätt att samla in data i tidsserier.
 
 [Faktablad till sensorn som används i snickeriet](https://www.plantower.com/en/products_33/74.html)
