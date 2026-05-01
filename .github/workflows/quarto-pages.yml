@@ -50,6 +50,7 @@ jobs:
           install.packages(c(
             "knitr",
             "rmarkdown",
+            "quarto",
             "dplyr",
             "ggplot2",
             "readr",
