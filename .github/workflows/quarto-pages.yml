@@ -76,6 +76,7 @@ jobs:
         run: quarto render ./quarto
         env:
           PMS_LOG_DIR: ${{ github.workspace }}/pms_logs
+          R_LIBS_USER: ${{ env.R_LIBS_USER }}
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
